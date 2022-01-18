@@ -17,7 +17,7 @@
 
 
   If you find this script useful, let us know by writing a comment at
-  https://rileywaterhouse.co.uk/blog/jsontable
+  https://rileywaterhouse.co.uk/jsontable
   ===========================================================================	
 	MIT License
 
