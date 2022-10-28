@@ -77,8 +77,8 @@ as return
 with json_cte as (
 
     select 
-        1 as lvl, 
-        cast([Key] as nvarchar(max)) collate database_default as Name, 
+        0 as lvl, 
+        cast(NULL as nvarchar(max)) collate database_default as Name, 
         cast(null as nvarchar(max)) as ParentName,
         --cast(1 as int) as ParentPosition,
 		case Type 
@@ -89,16 +89,16 @@ with json_cte as (
 			when 4 then 'array'
 			when 5 then 'object'
 		end as NodeType,
-        cast([Key] as nvarchar(max)) as FullPath, 
-		cast(N'$.'+[Key] as nvarchar(max)) as JSONPath,
+        cast('' as nvarchar(max)) collate database_default as FullPath, 
+		cast(N'$' as nvarchar(max)) collate database_default as JSONPath,
         --row_number() over(order by (select 1)) as Position,
-		cast([Key] as nvarchar(max)) collate database_default as Tree, 
-		cast(json_value(@jsondoc, N'$.'+quotename([Key],'"')) as nvarchar(max)) as Value,
-		cast(json_query(@jsondoc, N'$') as nvarchar(max)) collate database_default as this,        
-		cast(json_query(@jsondoc, N'$.'+quotename([Key],'"')) as nvarchar(max)) as t,        
+		cast('' as nvarchar(max)) collate database_default as Tree, 
+		cast(json_value(N'{"TLO":'+@jsondoc+'}', N'$.'+quotename([Key],'"')) as nvarchar(max)) as Value,
+		cast(json_query(N'{"TLO":'+@jsondoc+'}', N'$') as nvarchar(max)) collate database_default as this,        
+		cast(json_query(N'{"TLO":'+@jsondoc+'}', N'$.'+quotename([Key],'"')) as nvarchar(max)) as t,        
 		cast(cast(1 as varbinary(4)) as varbinary(max)) as Sort, 
-		cast(1 as int) as ID 
-    from openjson(@jsondoc)
+		cast(0 as int) as ID 
+    from openjson(N'{"TLO":'+@jsondoc+'}')
 union all
  
    select 
@@ -115,12 +115,12 @@ union all
 			when 5 then 'object'
 		end as NodeType, 
         case 
-			when json_cte.NodeType = 'array' then cast(json_cte.FullPath + N'[' + nextlevel.[Key] + N']' as nvarchar(max)) 
-			else cast(json_cte.FullPath + N'/' + nextlevel.[Key] as nvarchar(max)) 
+			when json_cte.NodeType = 'array' then cast(json_cte.FullPath + N'[' + nextlevel.[Key] + N']' as nvarchar(max))  collate database_default
+			else cast(json_cte.FullPath + N'/' + nextlevel.[Key] as nvarchar(max))  collate database_default
 		end as FullPath, 
         case
-			when json_cte.NodeType = 'array' then cast(json_cte.JSONPath + N'[' + nextlevel.[Key] + N']' as nvarchar(max) )
-			else cast(json_cte.JSONPath + N'.' + nextlevel.[Key]  as nvarchar(max) )
+			when json_cte.NodeType = 'array' then cast(json_cte.JSONPath + N'[' + nextlevel.[Key] + N']' as nvarchar(max)) collate database_default
+			else cast(json_cte.JSONPath + N'.' + nextlevel.[Key]  as nvarchar(max)) collate database_default
 		end as JSONPath, 
         --row_number() over(
 		--		partition by cast(nextlevel.[Key] as nvarchar(max))
@@ -156,3 +156,4 @@ select
     ParentName, lvl as Depth, Name, 
     NodeType, FullPath, JSONPath, Tree as TreeView, Value, this as JSONData
 from json_cte
+where json_cte.ID>0
